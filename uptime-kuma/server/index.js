@@ -1,0 +1,141 @@
+function pluginConfig(context) {
+  const cfg = context.getConfig();
+  return {
+    sectionTitle: cfg.sectionTitle || 'Uptime Status',
+    url: String(cfg.url || '').trim(),
+    slug: String(cfg.slug || 'default').trim(),
+    refreshMinutes: Math.max(1, Number(cfg.refreshMinutes || 2))
+  };
+}
+
+async function refreshUptimeKuma(context) {
+  const cfg = pluginConfig(context);
+  if (!cfg.url) {
+    return { count: 0, reason: 'URL not configured' };
+  }
+  const baseUrl = cfg.url.replace(/\/+$/, '');
+  const slug = cfg.slug || 'default';
+
+  try {
+    const configRes = await context.fetch(`${baseUrl}/api/status-page/${slug}`, { headers: { 'User-Agent': 'home-lab-launcher-plugin' } });
+    if (!configRes.ok) throw new Error(`Status page config fetch failed: HTTP ${configRes.status}`);
+    const configData = await configRes.json();
+
+    const heartbeatRes = await context.fetch(`${baseUrl}/api/status-page/heartbeat/${slug}`, { headers: { 'User-Agent': 'home-lab-launcher-plugin' } });
+    if (!heartbeatRes.ok) throw new Error(`Heartbeats fetch failed: HTTP ${heartbeatRes.status}`);
+    const heartbeatData = await heartbeatRes.json();
+
+    const heartbeats = heartbeatData.heartbeatList || {};
+    const monitors = [];
+
+    const groups = configData.publicGroupList || [];
+    for (const group of groups) {
+      const monitorList = group.monitorList || [];
+      for (const m of monitorList) {
+        if (!m || !m.id) continue;
+        const mHeartbeats = heartbeats[m.id] || [];
+        const latestHb = mHeartbeats[mHeartbeats.length - 1] || null;
+        
+        const history = mHeartbeats.slice(-24).map(h => ({
+          status: h.status,
+          ping: h.ping,
+          time: h.time
+        }));
+
+        monitors.push({
+          id: m.id,
+          name: m.name || `Monitor #${m.id}`,
+          active: m.active !== false,
+          status: latestHb ? latestHb.status : -1,
+          ping: latestHb ? latestHb.ping : null,
+          msg: latestHb ? latestHb.msg : '',
+          history
+        });
+      }
+    }
+
+    context.db.prepare(`
+      INSERT INTO plugin_uptime_kuma_cache (key, value, updated_at, last_error)
+      VALUES ('monitors', ?, CURRENT_TIMESTAMP, NULL)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP, last_error=NULL
+    `).run(JSON.stringify(monitors));
+
+    return { count: monitors.length };
+  } catch (error) {
+    context.log?.('warn', 'refresh_failed', { error: error.message });
+    
+    // Update cache row but keep the last successful value if present
+    const existing = context.db.prepare("SELECT value FROM plugin_uptime_kuma_cache WHERE key='monitors'").get();
+    const fallbackValue = existing ? existing.value : '[]';
+    
+    context.db.prepare(`
+      INSERT INTO plugin_uptime_kuma_cache (key, value, updated_at, last_error)
+      VALUES ('monitors', ?, CURRENT_TIMESTAMP, ?)
+      ON CONFLICT(key) DO UPDATE SET updated_at=CURRENT_TIMESTAMP, last_error=excluded.last_error
+    `).run(fallbackValue, error.message);
+    
+    throw error;
+  }
+}
+
+exports.register = async function register(context) {
+  context.db.exec(`
+    CREATE TABLE IF NOT EXISTS plugin_uptime_kuma_cache (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      last_error TEXT
+    );
+  `);
+
+  const router = context.createRouter();
+
+  router.get('/monitors', (req, res) => {
+    const cfg = pluginConfig(context);
+    const row = context.db.prepare("SELECT value, updated_at AS updatedAt, last_error AS lastError FROM plugin_uptime_kuma_cache WHERE key='monitors'").get();
+    
+    res.json({
+      title: cfg.sectionTitle,
+      configured: !!cfg.url,
+      slug: cfg.slug,
+      monitors: row ? JSON.parse(row.value) : [],
+      lastUpdated: row ? row.updatedAt : null,
+      lastError: row ? row.lastError : null
+    });
+  });
+
+  router.post('/refresh', requireEditor, async (req, res) => {
+    try {
+      const result = await refreshUptimeKuma(context);
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      res.status(502).json({ error: error.message });
+    }
+  });
+
+  context.mountRouter(router);
+
+  context.registerDashboardSection({
+    id: 'uptime-kuma',
+    title: pluginConfig(context).sectionTitle,
+    script: context.publicScriptUrl
+  });
+
+  // Run initial refresh and schedule next jobs
+  refreshUptimeKuma(context).catch((error) => {
+    context.log?.('warn', 'initial_refresh_failed', { error: error.message });
+  });
+
+  context.setInterval(
+    () => refreshUptimeKuma(context).catch(() => {}),
+    pluginConfig(context).refreshMinutes * 60 * 1000,
+    'refresh uptime kuma'
+  );
+};
+
+function requireEditor(req, res, next) {
+  if (!['admin', 'editor'].includes(req.session?.user?.role)) {
+    return res.status(403).json({ error: 'Editor access required' });
+  }
+  next();
+}
