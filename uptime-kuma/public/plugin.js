@@ -30,10 +30,13 @@ window.HomeLabLauncher.registerPluginSection({
 
         const monitors = data.monitors || [];
         if (monitors.length === 0) {
+          const hasError = Boolean(data.lastError);
           container.innerHTML = `
             <div class="uptime-kuma-empty">
-              <h3>No monitors found</h3>
-              <p>Connected to Uptime Kuma but no public monitors were found on the status page <code>${escapeHtml(data.slug || 'default')}</code>.</p>
+              <h3>${hasError ? 'Uptime Kuma sync error' : 'No monitors found'}</h3>
+              <p>${hasError
+                ? `Could not refresh status page <code>${escapeHtml(data.slug || 'default')}</code>: ${escapeHtml(data.lastError)}`
+                : `Connected to Uptime Kuma but no public monitors were found on the status page <code>${escapeHtml(data.slug || 'default')}</code>.`}</p>
               <div class="uptime-kuma-actions">
                 <button class="ghost" id="uptime-kuma-refresh" type="button">Refresh</button>
               </div>

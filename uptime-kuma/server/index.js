@@ -14,7 +14,7 @@ async function refreshUptimeKuma(context) {
     return { count: 0, reason: 'URL not configured' };
   }
   const baseUrl = cfg.url.replace(/\/+$/, '');
-  const slug = cfg.slug || 'default';
+  const slug = encodeURIComponent(cfg.slug || 'default');
 
   try {
     const configRes = await context.fetch(`${baseUrl}/api/status-page/${slug}`, { headers: { 'User-Agent': 'home-lab-launcher-plugin' } });
@@ -90,15 +90,25 @@ exports.register = async function register(context) {
 
   const router = context.createRouter();
 
-  router.get('/monitors', (req, res) => {
+  router.get('/monitors', async (req, res) => {
     const cfg = pluginConfig(context);
-    const row = context.db.prepare("SELECT value, updated_at AS updatedAt, last_error AS lastError FROM plugin_uptime_kuma_cache WHERE key='monitors'").get();
+    let row = context.db.prepare("SELECT value, updated_at AS updatedAt, last_error AS lastError FROM plugin_uptime_kuma_cache WHERE key='monitors'").get();
+    const cachedMonitors = row ? parseCachedMonitors(row.value) : [];
+
+    if (cfg.url && (!row || (row.lastError && cachedMonitors.length === 0))) {
+      try {
+        await refreshUptimeKuma(context);
+      } catch {
+        // refreshUptimeKuma stores last_error for the frontend response.
+      }
+      row = context.db.prepare("SELECT value, updated_at AS updatedAt, last_error AS lastError FROM plugin_uptime_kuma_cache WHERE key='monitors'").get();
+    }
     
     res.json({
       title: cfg.sectionTitle,
       configured: !!cfg.url,
       slug: cfg.slug,
-      monitors: row ? JSON.parse(row.value) : [],
+      monitors: row ? parseCachedMonitors(row.value) : [],
       lastUpdated: row ? row.updatedAt : null,
       lastError: row ? row.lastError : null
     });
@@ -138,4 +148,13 @@ function requireEditor(req, res, next) {
     return res.status(403).json({ error: 'Editor access required' });
   }
   next();
+}
+
+function parseCachedMonitors(value) {
+  try {
+    const monitors = JSON.parse(value || '[]');
+    return Array.isArray(monitors) ? monitors : [];
+  } catch {
+    return [];
+  }
 }
