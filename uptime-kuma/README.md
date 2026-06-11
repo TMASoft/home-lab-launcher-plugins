@@ -16,6 +16,7 @@ Uptime Kuma plugin for Home Lab Launcher. It retrieves monitor statuses and hear
 - `sectionTitle`: Title of the dashboard section (default: `Uptime Status`).
 - `url`: Base URL of your Uptime Kuma instance (e.g. `http://uptime-kuma:3001` or `https://status.my-domain.com`). Admin-only because it controls server-side fetch targets.
 - `slug`: The slug of the status page you wish to fetch monitors from (default: `default`).
+- `ignoreTlsErrors`: Allow this plugin to connect when the Uptime Kuma TLS certificate cannot be validated. This is Admin-only and should be used only when you cannot mount or trust the issuing CA certificate.
 - `refreshMinutes`: Interval in minutes to automatically fetch new metrics in the background (default: `2`, minimum `1`).
 
 ## Development Installation

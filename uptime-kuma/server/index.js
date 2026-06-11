@@ -1,9 +1,13 @@
+const http = require('http');
+const https = require('https');
+
 function pluginConfig(context) {
   const cfg = context.getConfig();
   return {
     sectionTitle: cfg.sectionTitle || 'Uptime Status',
     url: String(cfg.url || '').trim(),
     slug: String(cfg.slug || 'default').trim(),
+    ignoreTlsErrors: Boolean(cfg.ignoreTlsErrors),
     refreshMinutes: Math.max(1, Number(cfg.refreshMinutes || 2))
   };
 }
@@ -17,13 +21,9 @@ async function refreshUptimeKuma(context) {
   const slug = encodeURIComponent(cfg.slug || 'default');
 
   try {
-    const configRes = await context.fetch(`${baseUrl}/api/status-page/${slug}`, { headers: { 'User-Agent': 'home-lab-launcher-plugin' } });
-    if (!configRes.ok) throw new Error(`Status page config fetch failed: HTTP ${configRes.status}`);
-    const configData = await configRes.json();
+    const configData = await fetchJson(context, `${baseUrl}/api/status-page/${slug}`, cfg.ignoreTlsErrors, 'Status page config fetch failed');
 
-    const heartbeatRes = await context.fetch(`${baseUrl}/api/status-page/heartbeat/${slug}`, { headers: { 'User-Agent': 'home-lab-launcher-plugin' } });
-    if (!heartbeatRes.ok) throw new Error(`Heartbeats fetch failed: HTTP ${heartbeatRes.status}`);
-    const heartbeatData = await heartbeatRes.json();
+    const heartbeatData = await fetchJson(context, `${baseUrl}/api/status-page/heartbeat/${slug}`, cfg.ignoreTlsErrors, 'Heartbeats fetch failed');
 
     const heartbeats = heartbeatData.heartbeatList || {};
     const monitors = [];
@@ -157,4 +157,40 @@ function parseCachedMonitors(value) {
   } catch {
     return [];
   }
+}
+
+async function fetchJson(context, url, ignoreTlsErrors, errorPrefix) {
+  if (!ignoreTlsErrors) {
+    const response = await context.fetch(url, { headers: { 'User-Agent': 'home-lab-launcher-plugin' } });
+    if (!response.ok) throw new Error(`${errorPrefix}: HTTP ${response.status}`);
+    return response.json();
+  }
+
+  return requestJson(url, { rejectUnauthorized: false });
+}
+
+function requestJson(url, { rejectUnauthorized = true } = {}) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const client = parsed.protocol === 'http:' ? http : https;
+    const req = client.request(parsed, {
+      method: 'GET',
+      headers: { 'User-Agent': 'home-lab-launcher-plugin', Accept: 'application/json' },
+      rejectUnauthorized,
+      timeout: 15000
+    }, (res) => {
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => {
+        const body = Buffer.concat(chunks).toString('utf8');
+        if (res.statusCode < 200 || res.statusCode >= 300) return reject(new Error(`HTTP ${res.statusCode}`));
+        try { resolve(JSON.parse(body)); }
+        catch (error) { reject(new Error(`Invalid JSON response: ${error.message}`)); }
+      });
+    });
+
+    req.on('timeout', () => req.destroy(new Error('Request timed out')));
+    req.on('error', reject);
+    req.end();
+  });
 }
