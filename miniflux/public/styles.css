@@ -1,0 +1,295 @@
+/* Container and loading */
+.miniflux-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--text-muted, #a0a0a0);
+  font-size: 0.95rem;
+}
+
+.miniflux-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color, #333);
+  border-top-color: var(--accent-color, #10b981);
+  border-radius: 50%;
+  animation: miniflux-spin 0.8s linear infinite;
+}
+
+@keyframes miniflux-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty & Error States */
+.miniflux-empty, .miniflux-error {
+  padding: 32px 24px;
+  text-align: center;
+  background: var(--card-bg, #1e1e1e);
+  border: 1px solid var(--border-color, #2e2e2e);
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+.miniflux-empty h3, .miniflux-error h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-color, #ffffff);
+}
+
+.miniflux-empty p, .miniflux-error p {
+  margin: 0 0 16px 0;
+  font-size: 0.9rem;
+  color: var(--text-muted, #a0a0a0);
+  line-height: 1.5;
+}
+
+.miniflux-empty code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.miniflux-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Layout section */
+.miniflux-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Header */
+.miniflux-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color, #2e2e2e);
+}
+
+.miniflux-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.miniflux-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-color, #10b981);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.miniflux-time {
+  font-size: 0.75rem;
+  color: var(--text-muted, #a0a0a0);
+}
+
+.miniflux-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* List and cards */
+.miniflux-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.miniflux-card {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--card-bg, #1a1a1a);
+  border: 1px solid var(--border-color, #2e2e2e);
+  border-radius: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 16px;
+  overflow: hidden;
+}
+
+.miniflux-card:hover {
+  background: var(--card-hover-bg, #222222);
+  border-color: var(--border-hover-color, #444444);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.miniflux-card.marking-read {
+  opacity: 0.3;
+  transform: scale(0.98);
+  pointer-events: none;
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.miniflux-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.miniflux-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+.miniflux-feed-title {
+  color: var(--accent-color, #10b981);
+  font-weight: 550;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.miniflux-date {
+  color: var(--text-muted, #777777);
+}
+
+.miniflux-entry-title {
+  color: var(--text-color, #ffffff);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+}
+
+.miniflux-entry-title:hover {
+  color: var(--accent-hover-color, #34d399);
+}
+
+/* Mark read action */
+.miniflux-mark-read {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-color, #2e2e2e);
+  color: var(--text-muted, #888888);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.miniflux-mark-read:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--accent-color, #10b981);
+  color: var(--accent-color, #10b981);
+  transform: scale(1.08);
+}
+
+/* Footer */
+.miniflux-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted, #777777);
+  padding-top: 4px;
+}
+
+.miniflux-footer a {
+  color: var(--accent-color, #10b981);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.miniflux-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Buttons and Links */
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--border-color, #2e2e2e);
+  color: var(--text-color, #ffffff);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button.ghost:hover {
+  background: var(--card-hover-bg, #222222);
+  border-color: var(--border-hover-color, #555555);
+}
+
+button.ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.ghost.warning-hover:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger-color, #ef4444);
+  color: var(--danger-color, #ef4444);
+}
+
+a.button {
+  display: inline-block;
+  background: var(--accent-color, #10b981);
+  color: #121212;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  line-height: normal;
+}
+
+a.button:hover {
+  background: var(--accent-hover-color, #34d399);
+}
+
+a.button.icon-btn {
+  background: transparent;
+  border: 1px solid var(--border-color, #2e2e2e);
+  color: var(--text-color, #ffffff);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+a.button.icon-btn:hover {
+  background: var(--card-hover-bg, #222222);
+  border-color: var(--border-hover-color, #555555);
+}
+
+.admin-only-tip {
+  font-size: 0.85rem;
+  margin-top: 8px;
+  color: var(--text-muted, #888888);
+}
