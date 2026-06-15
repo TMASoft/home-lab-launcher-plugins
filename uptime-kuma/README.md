@@ -18,6 +18,8 @@ Uptime Kuma plugin for Home Lab Launcher. It retrieves monitor statuses and hear
 - `slug`: The slug of the status page you wish to fetch monitors from (default: `default`).
 - `ignoreTlsErrors`: Allow this plugin to connect when the Uptime Kuma TLS certificate cannot be validated. This is Admin-only and should be used only when you cannot mount or trust the issuing CA certificate.
 - `refreshMinutes`: Interval in minutes to automatically fetch new metrics in the background (default: `2`, minimum `1`).
+- `uiAutoRefresh`: Enable automatic refresh of the status page widget in the browser (default: `false`).
+- `uiAutoRefreshInterval`: Interval in seconds to automatically refresh the browser UI status card (default: `60`, minimum `10`).
 
 ## Development Installation
 

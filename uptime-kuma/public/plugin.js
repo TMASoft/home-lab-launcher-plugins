@@ -12,10 +12,18 @@ window.HomeLabLauncher.registerPluginSection({
   render: async ({ container, api, user }) => {
     container.innerHTML = '<p class="uptime-kuma-loading">Loading uptime metrics…</p>';
     const canEdit = ['admin', 'editor'].includes(user?.role);
+    let autoRefreshTimer = null;
+    let lastConfig = null;
     
     async function render() {
       try {
         const data = await api('/api/plugins/uptime-kuma/monitors');
+        if (data) {
+          lastConfig = {
+            uiAutoRefresh: data.uiAutoRefresh,
+            uiAutoRefreshInterval: data.uiAutoRefreshInterval
+          };
+        }
         
         if (!data.configured) {
           container.innerHTML = `
@@ -25,6 +33,7 @@ window.HomeLabLauncher.registerPluginSection({
               ${canEdit ? '<p class="admin-only-tip">Go to <strong>Admin → Plugins</strong> to configure the Uptime Kuma URL and Status Page slug.</p>' : ''}
             </div>
           `;
+          setupAutoRefresh();
           return;
         }
 
@@ -43,6 +52,7 @@ window.HomeLabLauncher.registerPluginSection({
             </div>
           `;
           bind();
+          setupAutoRefresh();
           return;
         }
 
@@ -114,8 +124,30 @@ window.HomeLabLauncher.registerPluginSection({
           </div>
         `;
         bind();
+        setupAutoRefresh();
       } catch (error) {
         container.innerHTML = `<p class="uptime-kuma-error">Uptime Kuma integration error: ${escapeHtml(error.message)}</p>`;
+        setupAutoRefresh();
+      }
+    }
+
+    function setupAutoRefresh() {
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+      }
+
+      const config = lastConfig || { uiAutoRefresh: false, uiAutoRefreshInterval: 60 };
+      if (config.uiAutoRefresh) {
+        const intervalMs = Math.max(10, Number(config.uiAutoRefreshInterval || 60)) * 1000;
+        autoRefreshTimer = setInterval(async () => {
+          if (!document.body.contains(container)) {
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+            return;
+          }
+          await render();
+        }, intervalMs);
       }
     }
 

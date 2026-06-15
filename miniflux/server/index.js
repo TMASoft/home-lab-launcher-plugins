@@ -9,7 +9,9 @@ function pluginConfig(context) {
     apiToken: String(cfg.apiToken || '').trim(),
     ignoreTlsErrors: Boolean(cfg.ignoreTlsErrors),
     limit: Math.min(20, Math.max(1, Number(cfg.limit || 5))),
-    refreshMinutes: Math.max(1, Number(cfg.refreshMinutes || 15))
+    refreshMinutes: Math.max(1, Number(cfg.refreshMinutes || 15)),
+    uiAutoRefresh: cfg.uiAutoRefresh !== undefined ? Boolean(cfg.uiAutoRefresh) : false,
+    uiAutoRefreshInterval: Math.max(10, Number(cfg.uiAutoRefreshInterval || 60))
   };
 }
 
@@ -170,7 +172,9 @@ exports.register = async function register(context) {
       total: cache.total,
       entries: cache.entries,
       lastUpdated: row ? row.updatedAt : null,
-      lastError: row ? row.lastError : null
+      lastError: row ? row.lastError : null,
+      uiAutoRefresh: cfg.uiAutoRefresh,
+      uiAutoRefreshInterval: cfg.uiAutoRefreshInterval
     });
   });
 

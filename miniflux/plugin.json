@@ -1,7 +1,7 @@
 {
   "id": "miniflux",
   "name": "Miniflux RSS",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "launcherApiVersion": "1",
   "backend": "server/index.js",
   "frontend": "public/plugin.js",
@@ -12,6 +12,8 @@
     "apiToken": { "type": "string", "default": "", "scope": "admin", "description": "Your Miniflux API Key (create in Settings > API Keys)." },
     "ignoreTlsErrors": { "type": "boolean", "default": false, "scope": "admin", "description": "Allow this plugin to connect to Miniflux even when TLS certificate validation fails." },
     "limit": { "type": "number", "default": 5, "scope": "editor", "description": "Number of unread articles to display. Maximum 20." },
-    "refreshMinutes": { "type": "number", "default": 15, "scope": "editor", "description": "Status refresh interval in minutes. Minimum 1." }
+    "refreshMinutes": { "type": "number", "default": 15, "scope": "editor", "description": "Status refresh interval in minutes. Minimum 1." },
+    "uiAutoRefresh": { "type": "boolean", "default": false, "scope": "editor", "description": "Enable auto-refreshing the articles in the browser." },
+    "uiAutoRefreshInterval": { "type": "number", "default": 60, "scope": "editor", "description": "Browser auto-refresh interval in seconds. Minimum 10." }
   }
 }

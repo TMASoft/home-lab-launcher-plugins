@@ -8,7 +8,9 @@ function pluginConfig(context) {
     url: String(cfg.url || '').trim(),
     slug: String(cfg.slug || 'default').trim(),
     ignoreTlsErrors: Boolean(cfg.ignoreTlsErrors),
-    refreshMinutes: Math.max(1, Number(cfg.refreshMinutes || 2))
+    refreshMinutes: Math.max(1, Number(cfg.refreshMinutes || 2)),
+    uiAutoRefresh: cfg.uiAutoRefresh !== undefined ? Boolean(cfg.uiAutoRefresh) : false,
+    uiAutoRefreshInterval: Math.max(10, Number(cfg.uiAutoRefreshInterval || 60))
   };
 }
 
@@ -110,7 +112,9 @@ exports.register = async function register(context) {
       slug: cfg.slug,
       monitors: row ? parseCachedMonitors(row.value) : [],
       lastUpdated: row ? row.updatedAt : null,
-      lastError: row ? row.lastError : null
+      lastError: row ? row.lastError : null,
+      uiAutoRefresh: cfg.uiAutoRefresh,
+      uiAutoRefreshInterval: cfg.uiAutoRefreshInterval
     });
   });
 

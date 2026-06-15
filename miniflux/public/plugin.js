@@ -13,10 +13,18 @@ window.HomeLabLauncher.registerPluginSection({
     container.innerHTML = '<div class="miniflux-loading"><span class="miniflux-spinner"></span>Loading unread articles…</div>';
     const canEdit = ['admin', 'editor'].includes(user?.role);
     const isLoggedIn = !!user;
+    let autoRefreshTimer = null;
+    let lastConfig = null;
 
     async function render() {
       try {
         const data = await api('/api/plugins/miniflux/entries');
+        if (data) {
+          lastConfig = {
+            uiAutoRefresh: data.uiAutoRefresh,
+            uiAutoRefreshInterval: data.uiAutoRefreshInterval
+          };
+        }
 
         if (!data.configured) {
           container.innerHTML = `
@@ -26,6 +34,7 @@ window.HomeLabLauncher.registerPluginSection({
               ${canEdit ? '<p class="admin-only-tip">Go to <strong>Admin → Plugins</strong> to configure the Miniflux URL and API Token.</p>' : ''}
             </div>
           `;
+          setupAutoRefresh();
           return;
         }
 
@@ -47,6 +56,7 @@ window.HomeLabLauncher.registerPluginSection({
             </div>
           `;
           bind(data);
+          setupAutoRefresh();
           return;
         }
 
@@ -100,6 +110,7 @@ window.HomeLabLauncher.registerPluginSection({
           </div>
         `;
         bind(data);
+        setupAutoRefresh();
       } catch (error) {
         container.innerHTML = `
           <div class="miniflux-error">
@@ -108,6 +119,27 @@ window.HomeLabLauncher.registerPluginSection({
           </div>
         `;
         bind();
+        setupAutoRefresh();
+      }
+    }
+
+    function setupAutoRefresh() {
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+      }
+
+      const config = lastConfig || { uiAutoRefresh: false, uiAutoRefreshInterval: 60 };
+      if (config.uiAutoRefresh) {
+        const intervalMs = Math.max(10, Number(config.uiAutoRefreshInterval || 60)) * 1000;
+        autoRefreshTimer = setInterval(async () => {
+          if (!document.body.contains(container)) {
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+            return;
+          }
+          await render();
+        }, intervalMs);
       }
     }
 

@@ -18,6 +18,8 @@ Miniflux plugin for Home Lab Launcher. It retrieves unread articles from your Mi
 - `ignoreTlsErrors`: Bypass TLS certificate validation for internal/self-signed certificates. Admin-only.
 - `limit`: Maximum number of unread articles to display at once (default: `5`, range `1-20`).
 - `refreshMinutes`: Interval in minutes to automatically fetch new articles in the background (default: `15`, minimum `1`).
+- `uiAutoRefresh`: Enable automatic refresh of the RSS feed widget in the browser (default: `false`).
+- `uiAutoRefreshInterval`: Interval in seconds to automatically refresh the browser UI status card (default: `60`, minimum `10`).
 
 ## Development Installation
 
