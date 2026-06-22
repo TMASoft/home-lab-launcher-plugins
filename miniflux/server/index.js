@@ -11,7 +11,8 @@ function pluginConfig(context) {
     limit: Math.min(20, Math.max(1, Number(cfg.limit || 5))),
     refreshMinutes: Math.max(1, Number(cfg.refreshMinutes || 15)),
     uiAutoRefresh: cfg.uiAutoRefresh !== undefined ? Boolean(cfg.uiAutoRefresh) : false,
-    uiAutoRefreshInterval: Math.max(10, Number(cfg.uiAutoRefreshInterval || 60))
+    uiAutoRefreshInterval: Math.max(10, Number(cfg.uiAutoRefreshInterval || 60)),
+    showCategories: Boolean(cfg.showCategories)
   };
 }
 
@@ -107,7 +108,8 @@ async function refreshMiniflux(context) {
       url: entry.url,
       publishedAt: entry.published_at,
       feedTitle: entry.feed ? entry.feed.title : 'Unknown Feed',
-      feedUrl: entry.feed ? entry.feed.site_url : ''
+      feedUrl: entry.feed ? entry.feed.site_url : '',
+      categoryTitle: entry.feed?.category?.title || entry.category?.title || 'Uncategorized'
     }));
 
     const dataToCache = {
@@ -174,7 +176,8 @@ exports.register = async function register(context) {
       lastUpdated: row ? row.updatedAt : null,
       lastError: row ? row.lastError : null,
       uiAutoRefresh: cfg.uiAutoRefresh,
-      uiAutoRefreshInterval: cfg.uiAutoRefreshInterval
+      uiAutoRefreshInterval: cfg.uiAutoRefreshInterval,
+      showCategories: cfg.showCategories
     });
   });
 
@@ -189,17 +192,20 @@ exports.register = async function register(context) {
 
   router.post('/read', requireUser, async (req, res) => {
     const { id } = req.body;
-    if (!id) {
+    const entryId = Number(id);
+    if (!Number.isSafeInteger(entryId) || entryId <= 0) {
       return res.status(400).json({ error: 'Entry ID is required' });
     }
 
     try {
-      await minifluxRequest(context, '/v1/entries', 'PUT', {
-        entry_ids: [Number(id)],
+      await minifluxRequest(context, `/v1/entries/${entryId}`, 'PUT', {
         status: 'read'
       });
 
-      await refreshMiniflux(context);
+      removeCachedEntries(context, [entryId]);
+      refreshMiniflux(context).catch((error) => {
+        context.log?.('warn', 'miniflux_refresh_after_read_failed', { error: error.message });
+      });
       res.json({ ok: true });
     } catch (error) {
       res.status(502).json({ error: error.message });
@@ -209,7 +215,10 @@ exports.register = async function register(context) {
   router.post('/read-all', requireUser, async (req, res) => {
     try {
       await minifluxRequest(context, '/v1/mark_all_as_read', 'PUT');
-      await refreshMiniflux(context);
+      replaceCachedData(context, { total: 0, entries: [] });
+      refreshMiniflux(context).catch((error) => {
+        context.log?.('warn', 'miniflux_refresh_after_read_all_failed', { error: error.message });
+      });
       res.json({ ok: true });
     } catch (error) {
       res.status(502).json({ error: error.message });
@@ -252,4 +261,26 @@ function parseCachedData(value) {
   } catch {
     return { total: 0, entries: [] };
   }
+}
+
+function removeCachedEntries(context, ids) {
+  const row = context.db.prepare("SELECT value FROM plugin_miniflux_cache WHERE key='unread'").get();
+  if (!row) return;
+
+  const idSet = new Set(ids.map(Number));
+  const cache = parseCachedData(row.value);
+  const entries = cache.entries.filter((entry) => !idSet.has(Number(entry.id)));
+  const removed = cache.entries.length - entries.length;
+  replaceCachedData(context, {
+    total: Math.max(0, cache.total - removed),
+    entries
+  });
+}
+
+function replaceCachedData(context, data) {
+  context.db.prepare(`
+    INSERT INTO plugin_miniflux_cache (key, value, updated_at, last_error)
+    VALUES ('unread', ?, CURRENT_TIMESTAMP, NULL)
+    ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP, last_error=NULL
+  `).run(JSON.stringify(data));
 }

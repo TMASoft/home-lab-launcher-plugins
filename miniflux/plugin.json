@@ -1,7 +1,7 @@
 {
   "id": "miniflux",
   "name": "Miniflux RSS",
-  "version": "0.1.1",
+  "version": "0.2.2",
   "launcherApiVersion": "1",
   "backend": "server/index.js",
   "frontend": "public/plugin.js",
@@ -14,6 +14,7 @@
     "limit": { "type": "number", "default": 5, "scope": "editor", "description": "Number of unread articles to display. Maximum 20." },
     "refreshMinutes": { "type": "number", "default": 15, "scope": "editor", "description": "Status refresh interval in minutes. Minimum 1." },
     "uiAutoRefresh": { "type": "boolean", "default": false, "scope": "editor", "description": "Enable auto-refreshing the articles in the browser." },
-    "uiAutoRefreshInterval": { "type": "number", "default": 60, "scope": "editor", "description": "Browser auto-refresh interval in seconds. Minimum 10." }
+    "uiAutoRefreshInterval": { "type": "number", "default": 60, "scope": "editor", "description": "Browser auto-refresh interval in seconds. Minimum 10." },
+    "showCategories": { "type": "boolean", "default": false, "scope": "user", "label": "Show categories", "description": "User display preference also available from the Miniflux plugin header." }
   }
 }

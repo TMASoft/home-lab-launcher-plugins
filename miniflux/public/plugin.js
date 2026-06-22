@@ -9,10 +9,11 @@ if (!document.querySelector('link[data-plugin-style="miniflux"]')) {
 window.HomeLabLauncher.registerPluginSection({
   id: 'miniflux',
   title: 'Miniflux RSS',
-  render: async ({ container, api, user }) => {
+  render: async ({ container, api, user, preferences = {}, setPluginPreference }) => {
     container.innerHTML = '<div class="miniflux-loading"><span class="miniflux-spinner"></span>Loading unread articles…</div>';
     const canEdit = ['admin', 'editor'].includes(user?.role);
     const isLoggedIn = !!user;
+    let pluginPreferences = { ...preferences };
     let autoRefreshTimer = null;
     let lastConfig = null;
 
@@ -40,6 +41,9 @@ window.HomeLabLauncher.registerPluginSection({
 
         const entries = data.entries || [];
         const total = data.total || 0;
+        const showCategories = pluginPreferences.showCategories === undefined
+          ? data.showCategories === true
+          : pluginPreferences.showCategories === true;
 
         if (total === 0) {
           const hasError = Boolean(data.lastError);
@@ -72,36 +76,13 @@ window.HomeLabLauncher.registerPluginSection({
                 <span class="miniflux-time">${lastUpdatedText}</span>
               </div>
               <div class="miniflux-header-actions">
+                <button class="ghost ${showCategories ? 'active-filter' : ''}" id="miniflux-toggle-categories" type="button">${showCategories ? 'Flat list' : 'Categories'}</button>
                 ${isLoggedIn ? '<button class="ghost warning-hover" id="miniflux-read-all" type="button">Mark All Read</button>' : ''}
                 <button class="ghost" id="miniflux-refresh" type="button">Refresh</button>
                 ${data.url ? `<a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="button icon-btn" title="Open Miniflux">↗</a>` : ''}
               </div>
             </div>
-            <div class="miniflux-list">
-              ${entries.map(entry => {
-                const relTime = formatRelativeTime(entry.publishedAt);
-                return `
-                  <article class="miniflux-card" data-id="${entry.id}">
-                    <div class="miniflux-card-content">
-                      <div class="miniflux-meta">
-                        <span class="miniflux-feed-title" title="${escapeHtml(entry.feedTitle)}">${escapeHtml(entry.feedTitle)}</span>
-                        <span class="miniflux-date" title="${new Date(entry.publishedAt).toLocaleString()}">${escapeHtml(relTime)}</span>
-                      </div>
-                      <a href="${escapeHtml(entry.url)}" target="_blank" rel="noopener noreferrer" class="miniflux-entry-title">
-                        ${escapeHtml(entry.title)}
-                      </a>
-                    </div>
-                    ${isLoggedIn ? `
-                      <button class="miniflux-mark-read" data-id="${entry.id}" title="Mark as read" type="button">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </button>
-                    ` : ''}
-                  </article>
-                `;
-              }).join('')}
-            </div>
+            ${showCategories ? renderCategories(entries, isLoggedIn) : `<div class="miniflux-list">${entries.map(entry => renderEntry(entry, isLoggedIn)).join('')}</div>`}
             ${total > entries.length ? `
               <div class="miniflux-footer">
                 <p>Showing latest ${entries.length} of ${total} unread articles. <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer">View more on Miniflux</a></p>
@@ -144,6 +125,20 @@ window.HomeLabLauncher.registerPluginSection({
     }
 
     function bind(data) {
+      const categoryToggle = container.querySelector('#miniflux-toggle-categories');
+      if (categoryToggle) {
+        categoryToggle.addEventListener('click', async () => {
+          pluginPreferences = { ...pluginPreferences, showCategories: pluginPreferences.showCategories !== true };
+          categoryToggle.disabled = true;
+          try {
+            await setPluginPreference?.('showCategories', pluginPreferences.showCategories);
+          } catch (err) {
+            console.error(err);
+          }
+          await render();
+        });
+      }
+
       const refreshBtn = container.querySelector('#miniflux-refresh');
       if (refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
@@ -209,6 +204,46 @@ window.HomeLabLauncher.registerPluginSection({
           }
         });
       }
+    }
+
+    function renderCategories(entries, isLoggedIn) {
+      const groups = entries.reduce((acc, entry) => {
+        const category = entry.categoryTitle || 'Uncategorized';
+        if (!acc.has(category)) acc.set(category, []);
+        acc.get(category).push(entry);
+        return acc;
+      }, new Map());
+
+      return `
+        <div class="miniflux-categories">
+          ${Array.from(groups.entries()).map(([category, items]) => `
+            <details class="miniflux-category" open>
+              <summary><span>${escapeHtml(category)}</span><small>${items.length}</small></summary>
+              <div class="miniflux-list">${items.map(entry => renderEntry(entry, isLoggedIn)).join('')}</div>
+            </details>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderEntry(entry, isLoggedIn) {
+      const relTime = formatRelativeTime(entry.publishedAt);
+      return `
+        <article class="miniflux-card" data-id="${entry.id}">
+          <div class="miniflux-card-content">
+            <span class="miniflux-feed-title" title="${escapeHtml(entry.feedTitle)}">${escapeHtml(entry.feedTitle)}</span>
+            <span class="miniflux-date" title="${new Date(entry.publishedAt).toLocaleString()}">${escapeHtml(relTime)}</span>
+            <a href="${escapeHtml(entry.url)}" target="_blank" rel="noopener noreferrer" class="miniflux-entry-title">${escapeHtml(entry.title)}</a>
+          </div>
+          ${isLoggedIn ? `
+            <button class="miniflux-mark-read" data-id="${entry.id}" title="Mark as read" type="button">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+          ` : ''}
+        </article>
+      `;
     }
 
     function formatRelativeTime(dateString) {
