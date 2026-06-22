@@ -14,12 +14,14 @@ window.HomeLabLauncher.registerPluginSection({
     const canEdit = ['admin', 'editor'].includes(user?.role);
     const isLoggedIn = !!user;
     let pluginPreferences = { ...preferences };
+    let categoryOpenState = {};
     let autoRefreshTimer = null;
     let lastConfig = null;
 
     async function render() {
       try {
-        const data = await api('/api/plugins/miniflux/entries');
+        const requestedLimit = normalizeDisplayLimit(pluginPreferences.displayLimit);
+        const data = await api(`/api/plugins/miniflux/entries${requestedLimit ? `?limit=${requestedLimit}` : ''}`);
         if (data) {
           lastConfig = {
             uiAutoRefresh: data.uiAutoRefresh,
@@ -41,11 +43,14 @@ window.HomeLabLauncher.registerPluginSection({
 
         const entries = data.entries || [];
         const total = data.total || 0;
+        const categories = data.categories || [];
+        const displayLimit = normalizeDisplayLimit(pluginPreferences.displayLimit, data.limit || 5);
+        const maxLimit = normalizeDisplayLimit(data.maxLimit, 100);
         const showCategories = pluginPreferences.showCategories === undefined
           ? data.showCategories === true
           : pluginPreferences.showCategories === true;
 
-        if (total === 0) {
+        if (total === 0 && (!showCategories || categories.length === 0)) {
           const hasError = Boolean(data.lastError);
           container.innerHTML = `
             <div class="miniflux-empty">
@@ -76,16 +81,21 @@ window.HomeLabLauncher.registerPluginSection({
                 <span class="miniflux-time">${lastUpdatedText}</span>
               </div>
               <div class="miniflux-header-actions">
-                <button class="ghost ${showCategories ? 'active-filter' : ''}" id="miniflux-toggle-categories" type="button">${showCategories ? 'Flat list' : 'Categories'}</button>
+                <div class="miniflux-limit-control" aria-label="Articles to show">
+                  <button class="ghost" data-miniflux-limit-step="-1" type="button" ${displayLimit <= 1 ? 'disabled' : ''}>‹</button>
+                  <span title="Articles per category">${displayLimit}</span>
+                  <button class="ghost" data-miniflux-limit-step="1" type="button" ${displayLimit >= maxLimit ? 'disabled' : ''}>›</button>
+                </div>
+                <button class="ghost ${showCategories ? 'active-filter' : ''}" id="miniflux-toggle-categories" data-enabled="${showCategories ? 'true' : 'false'}" type="button">${showCategories ? 'Flat list' : 'Categories'}</button>
                 ${isLoggedIn ? '<button class="ghost warning-hover" id="miniflux-read-all" type="button">Mark All Read</button>' : ''}
                 <button class="ghost" id="miniflux-refresh" type="button">Refresh</button>
                 ${data.url ? `<a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="button icon-btn" title="Open Miniflux">↗</a>` : ''}
               </div>
             </div>
-            ${showCategories ? renderCategories(entries, isLoggedIn) : `<div class="miniflux-list">${entries.map(entry => renderEntry(entry, isLoggedIn)).join('')}</div>`}
+            ${showCategories ? renderCategories(entries, categories, isLoggedIn) : `<div class="miniflux-list">${entries.map(entry => renderEntry(entry, isLoggedIn)).join('')}</div>`}
             ${total > entries.length ? `
               <div class="miniflux-footer">
-                <p>Showing latest ${entries.length} of ${total} unread articles. <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer">View more on Miniflux</a></p>
+                <p>Showing up to ${displayLimit} unread articles per category. <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer">View more on Miniflux</a></p>
               </div>
             ` : ''}
           </div>
@@ -128,7 +138,7 @@ window.HomeLabLauncher.registerPluginSection({
       const categoryToggle = container.querySelector('#miniflux-toggle-categories');
       if (categoryToggle) {
         categoryToggle.addEventListener('click', async () => {
-          pluginPreferences = { ...pluginPreferences, showCategories: pluginPreferences.showCategories !== true };
+          pluginPreferences = { ...pluginPreferences, showCategories: categoryToggle.dataset.enabled !== 'true' };
           categoryToggle.disabled = true;
           try {
             await setPluginPreference?.('showCategories', pluginPreferences.showCategories);
@@ -146,7 +156,8 @@ window.HomeLabLauncher.registerPluginSection({
           refreshBtn.textContent = 'Refreshing…';
           try {
             if (isLoggedIn) {
-              await api('/api/plugins/miniflux/refresh', { method: 'POST' });
+              const limit = normalizeDisplayLimit(pluginPreferences.displayLimit);
+              await api(`/api/plugins/miniflux/refresh${limit ? `?limit=${limit}` : ''}`, { method: 'POST' });
             }
             await render();
           } catch (err) {
@@ -204,24 +215,55 @@ window.HomeLabLauncher.registerPluginSection({
           }
         });
       }
+
+      container.querySelectorAll('.miniflux-category').forEach(details => {
+        details.addEventListener('toggle', () => {
+          categoryOpenState[details.dataset.category || ''] = details.open;
+        });
+      });
+
+      container.querySelectorAll('[data-miniflux-limit-step]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const current = normalizeDisplayLimit(pluginPreferences.displayLimit, data?.limit || 5);
+          const max = normalizeDisplayLimit(data?.maxLimit, 100);
+          const next = Math.max(1, Math.min(max, current + Number(button.dataset.minifluxLimitStep || 0)));
+          if (next === current) return;
+          pluginPreferences = { ...pluginPreferences, displayLimit: next };
+          button.disabled = true;
+          try {
+            await setPluginPreference?.('displayLimit', next);
+          } catch (err) {
+            console.error(err);
+          }
+          await render();
+        });
+      });
     }
 
-    function renderCategories(entries, isLoggedIn) {
+    function renderCategories(entries, categories, isLoggedIn) {
       const groups = entries.reduce((acc, entry) => {
         const category = entry.categoryTitle || 'Uncategorized';
         if (!acc.has(category)) acc.set(category, []);
         acc.get(category).push(entry);
         return acc;
       }, new Map());
+      const categoryNames = [...categories.map(category => category.title || 'Uncategorized'), ...groups.keys()]
+        .filter(Boolean)
+        .filter((category, index, all) => all.indexOf(category) === index)
+        .sort((a, b) => a.localeCompare(b));
 
       return `
         <div class="miniflux-categories">
-          ${Array.from(groups.entries()).map(([category, items]) => `
-            <details class="miniflux-category" open>
+          ${categoryNames.map((category) => {
+            const items = groups.get(category) || [];
+            const open = categoryOpenState[category] ?? false;
+            return `
+            <details class="miniflux-category" data-category="${escapeHtml(category)}" ${open ? 'open' : ''}>
               <summary><span>${escapeHtml(category)}</span><small>${items.length}</small></summary>
-              <div class="miniflux-list">${items.map(entry => renderEntry(entry, isLoggedIn)).join('')}</div>
+              <div class="miniflux-list">${items.length ? items.map(entry => renderEntry(entry, isLoggedIn)).join('') : '<p class="miniflux-category-empty">No stories in the current unread slice.</p>'}</div>
             </details>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       `;
     }
@@ -261,6 +303,12 @@ window.HomeLabLauncher.registerPluginSection({
       if (diffDays < 7) return `${diffDays}d ago`;
       
       return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function normalizeDisplayLimit(value, fallback = null) {
+      const number = Number(value ?? fallback);
+      if (!Number.isFinite(number)) return null;
+      return Math.min(100, Math.max(1, Math.round(number)));
     }
 
     function escapeHtml(v) {

@@ -6,7 +6,8 @@ Miniflux plugin for Home Lab Launcher. It retrieves unread articles from your Mi
 
 - **Unread Articles Feed**: Lists your most recent unread RSS articles.
 - **Compact Reading Layout**: Shows source, publish time, and article title on a single dense row to fit more stories on screen.
-- **Optional Categories**: Group unread articles by Miniflux category with expandable sections. Users can toggle categories from the plugin header and keep their own saved preference.
+- **Optional Categories**: Show all configured Miniflux categories with expandable sections and group any currently displayed unread articles under them. Users can toggle categories from the plugin header and keep their own saved preference.
+- **Per-user Article Count**: Use the compact up/down counter in the plugin header to choose how many unread articles to show per category.
 - **Interactive Actions**: Mark individual entries as read directly from the dashboard card, or mark all unread entries as read at once.
 - **Smooth Animations**: Includes subtle hover states and fade-out animations for marked-as-read items.
 - **Performance Caching**: Persists feed data inside the launcher SQLite database to provide instant dashboard loads and fallback values during network timeouts.
@@ -18,7 +19,7 @@ Miniflux plugin for Home Lab Launcher. It retrieves unread articles from your Mi
 - `url`: Base URL of your Miniflux instance (e.g. `http://miniflux:8080` or `https://reader.my-domain.com`). Admin-only.
 - `apiToken`: Your Miniflux API Key, created in Settings > API Keys. Admin-only.
 - `ignoreTlsErrors`: Bypass TLS certificate validation for internal/self-signed certificates. Admin-only.
-- `limit`: Maximum number of unread articles to display at once (default: `5`, range `1-20`).
+- `limit`: Default number of unread articles to display at once (default: `5`, range `1-100`).
 - `refreshMinutes`: Interval in minutes to automatically fetch new articles in the background (default: `15`, minimum `1`).
 - `uiAutoRefresh`: Enable automatic refresh of the RSS feed widget in the browser (default: `false`).
 - `uiAutoRefreshInterval`: Interval in seconds to automatically refresh the browser UI status card (default: `60`, minimum `10`).
@@ -26,7 +27,7 @@ Miniflux plugin for Home Lab Launcher. It retrieves unread articles from your Mi
 
 ## User Preferences
 
-The **Categories** button in the plugin header toggles between a flat compact list and expandable category groups. Home Lab Launcher saves this as a per-user plugin preference for signed-in users, and as browser-local plugin preference data for anonymous public-read viewers.
+The **Categories** button in the plugin header toggles between a flat compact list and expandable category groups. Category sections default to collapsed and keep their expanded/collapsed state during refreshes in the current dashboard session. Home Lab Launcher saves the category display mode and article count as per-user plugin preferences for signed-in users, and as browser-local plugin preference data for anonymous public-read viewers.
 
 ## Mark-as-read Behavior
 
