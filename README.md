@@ -1,8 +1,64 @@
 # Home Lab Launcher Plugins
 
-This repository contains official and community-authored plugins for [Home Lab Launcher](https://github.com/TMASoft/home-lab-launcher).
+This repository is the **plugin catalog** for [Home Lab Launcher](https://github.com/TMASoft/home-lab-launcher), plus documentation for plugin authors.
 
 Plugins extend Home Lab Launcher by adding optional dashboard sections, backend API routes, scheduled background jobs, and persistent SQLite database storage.
+
+Official plugins live in their own repositories and are indexed by [`catalog.json`](catalog.json):
+
+| Plugin | Repository |
+| --- | --- |
+| HLL Weather | <https://github.com/TMASoft/hll-weather> |
+| Uptime Kuma | <https://github.com/TMASoft/hll-uptime-kuma> |
+| Miniflux RSS | <https://github.com/TMASoft/hll-miniflux> |
+
+> The `miniflux/` and `uptime-kuma/` directories in this repository are the historical in-tree copies from before those plugins moved to their own repositories. Install from the standalone repositories (or the launcher's catalog UI) instead.
+
+---
+
+## 0. Plugin Catalog (`catalog.json`)
+
+The launcher's Admin → Plugins catalog view fetches `catalog.json` from this repository's default branch. The file is static JSON:
+
+```json
+{
+  "format": "home-lab-launcher-plugin-catalog-v1",
+  "updatedAt": "2026-07-06",
+  "plugins": [
+    {
+      "id": "hll-weather",
+      "name": "HLL Weather",
+      "description": "Weather forecast dashboard section powered by Open-Meteo.",
+      "repo": "https://github.com/TMASoft/hll-weather",
+      "homepage": "https://github.com/TMASoft/hll-weather#readme",
+      "trust": "official",
+      "launcherApiVersion": 1,
+      "latestVersion": "v0.3.0",
+      "permissions": ["routes", "storage", "jobs", "dashboard-section"],
+      "tags": ["weather", "dashboard"],
+      "sha256": { "v0.3.0": "<64-hex sha-256 of the release tarball, optional>" }
+    }
+  ]
+}
+```
+
+### Catalog entry fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `id` | Yes | Must equal the plugin's manifest `id` so the launcher can match installed plugins to catalog entries. |
+| `name` | Yes | Display name shown in the catalog. |
+| `description` | Yes | Short description shown in the catalog. |
+| `repo` | Yes | GitHub repository URL (or `owner/repo`). Installs go through the launcher's normal pinned GitHub install path. |
+| `homepage` | Optional | Documentation link. |
+| `trust` | Optional | `official` or `community`. Default `community`. This is curation metadata, not sandboxing — plugins are always trusted server-side code. |
+| `launcherApiVersion` | Optional | Launcher plugin API version the plugin targets. Default `1`. |
+| `latestVersion` | Optional | Latest published release/tag, used as an update hint. The launcher always discovers and pins real versions from GitHub at install time. |
+| `permissions` | Optional | Declared capability tokens, mirrored from the plugin manifest so operators can compare before installing. |
+| `tags` | Optional | Search keywords. |
+| `sha256` | Optional | Map of version → expected SHA-256 of the GitHub tarball. Note GitHub does not guarantee stable archive bytes over time, so hashes are optional and installs surface mismatches rather than silently proceeding. |
+
+Catalog installs never bypass the launcher's trust acknowledgement, version pinning, or archive safety checks.
 
 ---
 

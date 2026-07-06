@@ -1,0 +1,42 @@
+{
+  "format": "home-lab-launcher-plugin-catalog-v1",
+  "updatedAt": "2026-07-06",
+  "plugins": [
+    {
+      "id": "hll-weather",
+      "name": "HLL Weather",
+      "description": "Weather forecast dashboard section powered by Open-Meteo (no API key required). Server-side fetching, configurable location with city search, per-user themes including animated pixel art, and coordinate-precision privacy rounding.",
+      "repo": "https://github.com/TMASoft/hll-weather",
+      "homepage": "https://github.com/TMASoft/hll-weather#readme",
+      "trust": "official",
+      "launcherApiVersion": 1,
+      "latestVersion": "v0.3.0",
+      "permissions": ["routes", "storage", "jobs", "dashboard-section"],
+      "tags": ["weather", "dashboard", "open-meteo"]
+    },
+    {
+      "id": "uptime-kuma",
+      "name": "Uptime Kuma",
+      "description": "Shows Uptime Kuma status-page monitors natively on the launcher dashboard: public group mapping, 24-heartbeat sparklines, response-time metrics, pulsing status badges, and a persistent SQLite cache for instant loads.",
+      "repo": "https://github.com/TMASoft/hll-uptime-kuma",
+      "homepage": "https://github.com/TMASoft/hll-uptime-kuma#readme",
+      "trust": "official",
+      "launcherApiVersion": 1,
+      "latestVersion": "v0.1.3",
+      "permissions": ["routes", "storage", "jobs", "dashboard-section"],
+      "tags": ["monitoring", "status", "uptime-kuma"]
+    },
+    {
+      "id": "miniflux",
+      "name": "Miniflux RSS",
+      "description": "Displays unread Miniflux articles on the dashboard with compact rows, relative publish times, source feed labels, optional category grouping, per-user article counts, and mark-as-read actions.",
+      "repo": "https://github.com/TMASoft/hll-miniflux",
+      "homepage": "https://github.com/TMASoft/hll-miniflux#readme",
+      "trust": "official",
+      "launcherApiVersion": 1,
+      "latestVersion": "v0.2.4",
+      "permissions": ["routes", "storage", "jobs", "dashboard-section"],
+      "tags": ["rss", "news", "miniflux"]
+    }
+  ]
+}
