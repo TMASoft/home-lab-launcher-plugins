@@ -1,0 +1,54 @@
+name: Refresh catalog versions
+
+# Keeps each catalog entry's `latestVersion` in sync with the newest stable
+# release/tag of its plugin repository, so the launcher's plugin catalog shows
+# accurate versions without every launcher instance querying GitHub itself.
+
+on:
+  schedule:
+    # Hourly at :17. Releases are infrequent, but this keeps the badge fresh
+    # without waiting for a maintainer to hand-edit catalog.json.
+    - cron: '17 * * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    # Re-check whenever the catalog itself changes (e.g. a plugin was added).
+    paths: ['catalog.json']
+
+# Elevated over the repository's read-only default so the bot can push the
+# refreshed catalog.json back to main.
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-catalog-versions
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Refresh latestVersion from plugin repositories
+        env:
+          # The referenced repos are public, so the default token only serves
+          # to raise the API rate limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/refresh-catalog-versions.mjs
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- catalog.json; then
+            echo "No version changes."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add catalog.json
+          git commit -m 'chore: refresh plugin catalog versions'
+          git push
