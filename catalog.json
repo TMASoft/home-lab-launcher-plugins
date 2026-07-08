@@ -1,6 +1,6 @@
 {
   "format": "home-lab-launcher-plugin-catalog-v1",
-  "updatedAt": "2026-07-07",
+  "updatedAt": "2026-07-08",
   "plugins": [
     {
       "id": "hll-weather",
@@ -10,7 +10,7 @@
       "homepage": "https://github.com/TMASoft/hll-weather#readme",
       "trust": "official",
       "launcherApiVersion": 1,
-      "latestVersion": "v0.6.0",
+      "latestVersion": "v0.7.0",
       "permissions": ["routes", "storage", "jobs", "dashboard-section"],
       "tags": ["weather", "dashboard", "open-meteo"]
     },
