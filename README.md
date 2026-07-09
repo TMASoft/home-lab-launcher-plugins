@@ -9,6 +9,7 @@ Official plugins live in standalone repositories and are indexed by [`catalog.js
 | HLL Weather | <https://github.com/TMASoft/hll-weather> |
 | Uptime Kuma | <https://github.com/TMASoft/hll-uptime-kuma> |
 | Miniflux RSS | <https://github.com/TMASoft/hll-miniflux> |
+| Proxmox VE | <https://github.com/TMASoft/hll-proxmox> |
 
 ## Plugin Catalog (`catalog.json`)
 
