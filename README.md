@@ -10,6 +10,7 @@ Official plugins live in standalone repositories and are indexed by [`catalog.js
 | Uptime Kuma | <https://github.com/TMASoft/hll-uptime-kuma> |
 | Miniflux RSS | <https://github.com/TMASoft/hll-miniflux> |
 | Proxmox VE | <https://github.com/TMASoft/hll-proxmox> |
+| SearXNG Search | <https://github.com/TMASoft/hll-searxng> |
 
 ## Plugin Catalog (`catalog.json`)
 
