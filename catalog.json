@@ -34,7 +34,7 @@
       "homepage": "https://github.com/TMASoft/hll-miniflux#readme",
       "trust": "official",
       "launcherApiVersion": 1,
-      "latestVersion": "v0.3.0",
+      "latestVersion": "v0.3.1",
       "permissions": ["routes", "storage", "jobs", "dashboard-section"],
       "tags": ["rss", "news", "miniflux"]
     },
