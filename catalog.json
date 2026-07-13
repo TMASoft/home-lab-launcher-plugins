@@ -58,7 +58,7 @@
       "homepage": "https://github.com/TMASoft/hll-searxng#readme",
       "trust": "official",
       "launcherApiVersion": 1,
-      "latestVersion": "v0.1.0",
+      "latestVersion": "v0.2.0",
       "permissions": ["routes", "dashboard-section"],
       "tags": ["search", "searxng", "privacy", "dashboard"]
     }
