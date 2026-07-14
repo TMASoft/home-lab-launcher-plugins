@@ -1,6 +1,6 @@
 {
   "format": "home-lab-launcher-plugin-catalog-v1",
-  "updatedAt": "2026-07-13",
+  "updatedAt": "2026-07-14",
   "plugins": [
     {
       "id": "hll-weather",
@@ -58,7 +58,7 @@
       "homepage": "https://github.com/TMASoft/hll-searxng#readme",
       "trust": "official",
       "launcherApiVersion": 1,
-      "latestVersion": "v0.2.0",
+      "latestVersion": "v0.3.0",
       "permissions": ["routes", "dashboard-section"],
       "tags": ["search", "searxng", "privacy", "dashboard"]
     }
