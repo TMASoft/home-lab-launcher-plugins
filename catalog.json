@@ -61,6 +61,18 @@
       "latestVersion": "v0.3.1",
       "permissions": ["routes", "dashboard-section"],
       "tags": ["search", "searxng", "privacy", "dashboard"]
+    },
+    {
+      "id": "meshkeep",
+      "name": "MeshKeep",
+      "description": "Displays MeshKeep node connectivity, battery, contact and unread counts, and recent LoRa mesh messages from a persistent server-side cache.",
+      "repo": "https://github.com/TMASoft/hll-meshkeep",
+      "homepage": "https://github.com/TMASoft/hll-meshkeep#readme",
+      "trust": "official",
+      "launcherApiVersion": 1,
+      "latestVersion": "v0.1.0",
+      "permissions": ["routes", "storage", "jobs", "dashboard-section"],
+      "tags": ["mesh", "lora", "meshcore", "dashboard"]
     }
   ]
 }

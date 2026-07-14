@@ -11,6 +11,7 @@ Official plugins live in standalone repositories and are indexed by [`catalog.js
 | Miniflux RSS | <https://github.com/TMASoft/hll-miniflux> |
 | Proxmox VE | <https://github.com/TMASoft/hll-proxmox> |
 | SearXNG Search | <https://github.com/TMASoft/hll-searxng> |
+| MeshKeep | <https://github.com/TMASoft/hll-meshkeep> |
 
 ## Plugin Catalog (`catalog.json`)
 
