@@ -1,6 +1,6 @@
 {
   "format": "home-lab-launcher-plugin-catalog-v1",
-  "updatedAt": "2026-07-14",
+  "updatedAt": "2026-07-15",
   "plugins": [
     {
       "id": "hll-weather",
@@ -70,7 +70,7 @@
       "homepage": "https://github.com/TMASoft/hll-meshkeep#readme",
       "trust": "official",
       "launcherApiVersion": 1,
-      "latestVersion": "v0.1.0",
+      "latestVersion": "v0.1.1",
       "permissions": ["routes", "storage", "jobs", "dashboard-section"],
       "tags": ["mesh", "lora", "meshcore", "dashboard"]
     }
